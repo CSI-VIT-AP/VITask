@@ -16,7 +16,7 @@ from urllib.request import urlretrieve
 
 cred = credentials.Certificate("firebase.json")
 firebase_admin.initialize_app(cred, {
-    'databaseURL':'https://vitask.firebaseio.com/'
+    'databaseURL':'https://vit-app-fd3f1-default-rtdb.firebaseio.com/'
 })
 
 from utility import timeconverter, get_timestamp
