@@ -30,6 +30,12 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # Initialize Flask app
 app = Flask(__name__)
 
+# Disable logs in console 
+# import  logging
+# log = logging.getLogger('werkzeug')
+# log.disabled = True
+# app.logger.disabled = True
+
 # Set the port for Flask app
 port = int(os.environ.get('PORT', 5000))
 
