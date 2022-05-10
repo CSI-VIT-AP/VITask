@@ -111,7 +111,7 @@ def identify_chars(img,img_matrix):
 
 def solve_captcha(captchasrc,username):
     save_captcha(captchasrc,username)
-    url = "https://firebasestorage.googleapis.com/v0/b/vitask-7e1ea.appspot.com/o/captcha%2F"+username+"-captcha.png?alt=media"
+    url = "https://firebasestorage.googleapis.com/v0/b/vit-app-fd3f1.appspot.com/o/captcha%2F"+username+"-captcha.png?alt=media"
     img = Image.open(requests.get(url, stream=True).raw)
     img_matrix = remove_pixel_noise(img)
     captcha = identify_chars(img,img_matrix)
@@ -229,6 +229,6 @@ def get_student_profile(sess, username):
         return (profile, status)
     
 
-sess, username, valid = generate_session("SHEELAP2013","sheelaP2013")
+sess, username, valid = generate_session("21BCE9853","pntbwyS9Tiw8e@K")
 res, status = get_student_profile(sess, username)
 print(res)
