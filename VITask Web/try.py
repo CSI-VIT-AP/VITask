@@ -13,8 +13,9 @@ from constants import *
 
 cred = credentials.Certificate("firebase.json")
 firebase_admin.initialize_app(cred, {
-    'databaseURL':'https://vitask-7e1ea-default-rtdb.firebaseio.com/',
-    'storageBucket': 'vitask-7e1ea.appspot.com',
+    'databaseURL':'https://vit-app-fd3f1-default-rtdb.firebaseio.com/',
+    'storageBucket': 'vit-app-fd3f1.appspot.com',
+
 })
 
 bucket = storage.bucket()
