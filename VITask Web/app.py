@@ -8,15 +8,17 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from bs4 import BeautifulSoup
 import firebase_admin
-from firebase_admin import credentials, db
+from firebase_admin import credentials, db, storage
 from PIL import Image, ImageFilter
 from datetime import datetime as dt, timedelta, timezone
-import requests, urllib3, time, re, os, random, hashlib, requests, json, base64
+import requests, urllib3, time, re, os, random, hashlib, requests, json, base64, lxml
 from urllib.request import urlretrieve
+from uuid import uuid4
 
 cred = credentials.Certificate("firebase.json")
 firebase_admin.initialize_app(cred, {
-    'databaseURL':'https://vitask.firebaseio.com/'
+    'databaseURL':'https://vitask-7e1ea-default-rtdb.firebaseio.com/',
+    'storageBucket': 'vitask-7e1ea.appspot.com',
 })
 
 from utility import timeconverter, get_timestamp
@@ -29,9 +31,6 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Initialize Flask app
 app = Flask(__name__)
-
-# Set the port for Flask app
-port = int(os.environ.get('PORT', 5000))
 
 # Change this to your secret key (can be anything, it's for extra protection)
 app.secret_key = 'canada$God7972#'
@@ -1281,69 +1280,43 @@ def login():
         password = request.form['password']
         try:
             valid = True
-            sess, valid = generate_session(username, password)
-        finally:
+            sess, valid, username = generate_session(username, password)
             if( valid == False ):
                 print("Password error.")
                 return render_template('login.html',correct=False)
-
             else:
                 try:
                     profile = {}
                     profile, status = get_student_profile(sess, username)
                     if( status == False ):
                         print("Failed at profile.")
-                        return render_template('login.html',correct=False)
+                        return render_template('login.html', correct=False)
                     session['id'] = profile['appNo']
                     session['name'] = profile['name']
                     session['reg'] = profile['regNo']
                     session['loggedin'] = 1
+                    
+                    
+                    status_timetable = parallel_timetable(sess, username, session['id'])
+                    status_attendance = parallel_attendance(sess, username, session['id'])
+                    status_acadhistory = parallel_acadhistory(sess, username, session['id'])
+                    status_marks = parallel_marks(sess, username, session['id'])
+                    
+                    if(status_timetable==False or status_attendance==False or status_acadhistory==False or status_marks==False):
+                        print(f"Timetable {status_timetable}")
+                        print(f"Attendance {status_attendance}")
+                        print(f"Acad History {status_acadhistory}")
+                        print(f"Marks {status_marks}")
+                    return redirect(url_for('profile'))
+                
                 except Exception as e:
                     print(e)
                     return render_template('login.html',correct=False)
-                finally:
-                    # Timetable,Attendance,Acadhistory and Marks fetching
-                    try:
-                        status = parallel_timetable(sess, username, session['id'])
-                        if( status == False ):
-                            print("Failed at timetable.")
-                            return render_template('login.html',correct=False)
-                    except Exception as e:
-                        print(e)
-                        print("Exception at timetable.")
-                        return render_template('login.html',correct=False)
-                    finally:
-                        try:
-                            status = parallel_attendance(sess, username, session['id'])
-                            if( status == False ):
-                                print("Failed at attendance.")
-                                return render_template('login.html',correct=False)
-                        except Exception as e:
-                            print(e)
-                            print("Exception at attendance.")
-                            return render_template('login.html',correct=False)
-                        finally:
-                            try:
-                                status = parallel_acadhistory(sess, username, session['id'])
-                                if( status == False ):
-                                    print("Failed at acadhistory.")
-                                    return render_template('login.html',correct=False)
-                            except Exception as e:
-                                print(e)
-                                print("Exception at acadhistory.")
-                                return render_template('login.html',correct=False) 
-                            finally:
-                                try:
-                                    status = parallel_marks(sess, username, session['id'])
-                                    if( status == False ):
-                                        print("Failed at marks.")
-                                        return render_template('login.html',correct=False)
-                                except Exception as e:
-                                    print(e)
-                                    print("Exception at marks.")
-                                    return render_template('login.html',correct=False)
-                                finally:
-                                    return redirect(url_for('profile'))
+                
+        except Exception as e:
+            print(e)
+            return render_template('login.html',correct=False)
+                                    
     else:
         return redirect(url_for('index'))
                                   
@@ -1838,4 +1811,4 @@ def logout():
 
 # Run Flask app
 if __name__ == '__main__':
-	app.run(host='0.0.0.0', port=port, debug=True)
+	app.run(debug=True)
