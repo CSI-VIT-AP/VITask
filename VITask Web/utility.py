@@ -8,9 +8,11 @@ import os
 from PIL import Image, ImageFilter
 import json
 import firebase_admin
-from firebase_admin import db
+from firebase_admin import db, storage
+from uuid import uuid4
+import requests
 
-#ref = db.reference('vitask')
+bucket = storage.bucket()
 
 CAPTCHA_DIM = (180, 45)
 CHARACTER_DIM = (30, 32)
@@ -22,7 +24,7 @@ Functions for Captcha solver begin here
 ---------------------------------------
 """
 
-def save_captcha(captchasrc,username):
+def save_captcha(captchasrc, username):
     """
     Downloads and save a random captcha from VTOP website in the path provided
     Defaults to `/captcha`
@@ -30,9 +32,12 @@ def save_captcha(captchasrc,username):
     """
     base64_image = captchasrc[23:]
     # TODO: Change the name of file to a random name to prevent any collision
-    image_name = "./captcha/"+username+"-captcha.png"
-    with open(image_name, "wb") as fh:
-        fh.write(base64.b64decode(base64_image))
+    blob = bucket.blob(f'captcha/{username}-captcha.png')
+    new_token = uuid4()
+    metadata  = {"firebaseStorageDownloadTokens": new_token}
+    blob.metadata = metadata
+    blob.upload_from_string(base64.b64decode(base64_image), content_type='image/png')
+    
     
 def remove_pixel_noise(img):
     """
@@ -105,8 +110,8 @@ def identify_chars(img,img_matrix):
 
 def solve_captcha(captchasrc,username):
     save_captcha(captchasrc,username)
-
-    img = Image.open("./captcha/"+username+"-captcha.png")
+    url = "https://firebasestorage.googleapis.com/v0/b/vitask-7e1ea.appspot.com/o/captcha%2F"+username+"-captcha.png?alt=media"
+    img = Image.open(requests.get(url, stream=True).raw)
     img_matrix = remove_pixel_noise(img)
     captcha = identify_chars(img,img_matrix)
     return captcha
